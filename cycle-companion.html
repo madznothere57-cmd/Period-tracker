@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thicket — Cycle Companion</title>
+<style>
+  :root{
+    --plum-deep:#2B1F3D;
+    --plum-mid:#3D2E52;
+    --moon-cream:#F3E9DC;
+    --rose:#E8A0BF;
+    --sage:#8FAE8B;
+    --gold:#D4A857;
+    --line: rgba(243,233,220,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(232,160,191,0.10), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(143,174,139,0.10), transparent 40%),
+      var(--plum-deep);
+    color:var(--moon-cream);
+    font-family:'Quicksand',-apple-system,sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:32px 16px 80px;
+  }
+  .app{width:100%;max-width:480px;}
+
+  header{text-align:center;margin-bottom:22px;}
+  .wordmark{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-size:34px;
+    letter-spacing:0.04em;
+    font-weight:600;
+    color:var(--moon-cream);
+    margin:0;
+  }
+  .wordmark em{color:var(--rose);font-style:normal;}
+  .tagline{font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:var(--sage);margin-top:4px;opacity:0.85;}
+
+  nav{display:flex;gap:6px;background:var(--plum-mid);padding:5px;border-radius:14px;margin-bottom:20px;}
+  nav button{
+    flex:1;padding:10px 4px;border:none;border-radius:10px;background:transparent;
+    color:var(--moon-cream);opacity:0.55;font-family:inherit;font-weight:600;font-size:13px;
+    cursor:pointer;transition:.2s;
+  }
+  nav button.active{background:var(--plum-deep);opacity:1;box-shadow:0 0 0 1px var(--line);}
+
+  .panel{display:none;}
+  .panel.active{display:block;animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .card{
+    background:var(--plum-mid);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:20px;
+    margin-bottom:16px;
+  }
+  .card h2{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-size:20px;font-weight:600;margin:0 0 14px;color:var(--gold);
+  }
+
+  /* --- Cycle wheel (signature element) --- */
+  .wheel-wrap{display:flex;flex-direction:column;align-items:center;padding:6px 0 4px;}
+  #wheel{width:220px;height:220px;}
+  .wheel-center-label{text-align:center;margin-top:10px;}
+  .wheel-day{font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;color:var(--moon-cream);opacity:0.9;}
+  .wheel-status{font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--rose);margin-top:2px;}
+
+  .btn{
+    display:inline-block;border:none;border-radius:12px;padding:11px 18px;
+    font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;transition:.15s;
+  }
+  .btn-primary{background:var(--rose);color:var(--plum-deep);}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent;color:var(--moon-cream);border:1px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--sage);}
+  .btn-row{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+
+  label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--sage);margin:14px 0 6px;}
+  label:first-child{margin-top:0;}
+  input[type=date],input[type=number]{
+    width:100%;background:var(--plum-deep);border:1px solid var(--line);border-radius:10px;
+    color:var(--moon-cream);padding:10px 12px;font-family:inherit;font-size:14px;
+  }
+
+  .tags{display:flex;flex-wrap:wrap;gap:8px;}
+  .tag{
+    padding:8px 14px;border-radius:20px;border:1px solid var(--line);
+    background:var(--plum-deep);color:var(--moon-cream);font-size:13px;cursor:pointer;
+    opacity:0.75;transition:.15s;
+  }
+  .tag.selected{opacity:1;border-color:var(--rose);background:rgba(232,160,191,0.18);}
+
+  .severity-row{display:flex;gap:8px;}
+  .sev{flex:1;padding:10px 0;text-align:center;border-radius:10px;border:1px solid var(--line);
+    background:var(--plum-deep);cursor:pointer;font-weight:700;opacity:0.6;}
+  .sev.selected{opacity:1;border-color:var(--gold);background:rgba(212,168,87,0.18);}
+
+  .log-list{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;}
+  .log-item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;}
+  .log-item .d{color:var(--gold);font-weight:700;}
+  .empty{opacity:0.55;font-size:13px;text-align:center;padding:12px 0;}
+
+  /* --- Companion --- */
+  .companion-scene{display:flex;flex-direction:column;align-items:center;text-align:center;}
+  #deer{width:150px;height:150px;}
+  .companion-line{font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;margin:10px 0 4px;color:var(--moon-cream);min-height:24px;}
+
+  /* breathing minigame */
+  .breathe-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0 4px;}
+  .breathe-orb{
+    width:120px;height:120px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, rgba(232,160,191,0.9), rgba(143,174,139,0.55));
+    transition:transform 4s ease-in-out;
+    box-shadow:0 0 30px rgba(232,160,191,0.25);
+  }
+  .breathe-orb.in{transform:scale(1.35);}
+  .breathe-orb.out{transform:scale(0.8);}
+  .breathe-label{margin-top:16px;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;color:var(--sage);}
+
+  footer{text-align:center;font-size:11px;opacity:0.4;margin-top:20px;letter-spacing:0.05em;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <p class="wordmark">Thi<em>ck</em>et</p>
+    <p class="tagline">your cycle, gently kept</p>
+  </header>
+
+  <nav>
+    <button class="active" data-panel="cycle">Cycle</button>
+    <button data-panel="log">Log</button>
+    <button data-panel="companion">Companion</button>
+  </nav>
+
+  <!-- CYCLE PANEL -->
+  <div class="panel active" id="panel-cycle">
+    <div class="card">
+      <h2>Where you are</h2>
+      <div class="wheel-wrap">
+        <svg id="wheel" viewBox="0 0 220 220"></svg>
+        <div class="wheel-center-label">
+          <div class="wheel-day" id="wheelDayText">Log your first period to begin</div>
+          <div class="wheel-status" id="wheelStatusText"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="startCard">
+      <h2>Log a period start</h2>
+      <label for="periodStart">Start date</label>
+      <input type="date" id="periodStart">
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="logPeriodStart()">Save start date</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>History</h2>
+      <div class="log-list" id="cycleHistory"><div class="empty">No cycles logged yet</div></div>
+    </div>
+  </div>
+
+  <!-- LOG PANEL -->
+  <div class="panel" id="panel-log">
+    <div class="card">
+      <h2>Today</h2>
+      <label for="logDate">Date</label>
+      <input type="date" id="logDate">
+
+      <label>Mood</label>
+      <div class="tags" id="moodTags"></div>
+
+      <label>Symptoms</label>
+      <div class="tags" id="symptomTags"></div>
+
+      <label>Overall how rough was today?</label>
+      <div class="severity-row" id="sevRow"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveDailyLog()">Save today's log</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Recent entries</h2>
+      <div class="log-list" id="recentLogs"><div class="empty">Nothing logged yet</div></div>
+    </div>
+  </div>
+
+  <!-- COMPANION PANEL -->
+  <div class="panel" id="panel-companion">
+    <div class="card companion-scene">
+      <h2 style="align-self:center;">Fenn</h2>
+      <svg id="deer" viewBox="0 0 150 150"></svg>
+      <div class="companion-line" id="companionLine">Hi. However today's going, I'm glad you stopped by.</div>
+    </div>
+
+    <div class="card">
+      <h2>A slow breath</h2>
+      <div class="breathe-wrap">
+        <div class="breathe-orb" id="orb"></div>
+        <div class="breathe-label" id="breatheLabel">Press start when you're ready</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="breatheBtn" onclick="toggleBreathing()">Start</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>made for slow, imperfect, personal keeping</footer>
+</div>
+
+<script>
+/* ---------- storage ---------- */
+const store = {
+  get(k, fallback){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+let cycles = store.get('thicket_cycles', []);       // [{startDate}]
+let dailyLogs = store.get('thicket_logs', []);       // [{date, mood[], symptoms[], severity}]
+
+/* ---------- nav ---------- */
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.panel).classList.add('active');
+    if(btn.dataset.panel==='cycle') renderWheel();
+  });
+});
+
+/* ---------- tags setup ---------- */
+const MOODS = ['calm','irritable','sad','anxious','low energy','tender','angry','hopeful'];
+const SYMPTOMS = ['cramps','headache','bloating','fatigue','back pain','nausea','tender chest','acne'];
+
+function buildTags(containerId, list){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  list.forEach(item=>{
+    const t = document.createElement('div');
+    t.className='tag'; t.textContent=item; t.dataset.value=item;
+    t.onclick=()=>t.classList.toggle('selected');
+    el.appendChild(t);
+  });
+}
+buildTags('moodTags', MOODS);
+buildTags('symptomTags', SYMPTOMS);
+
+const sevRow = document.getElementById('sevRow');
+[1,2,3,4,5].forEach(n=>{
+  const d=document.createElement('div');
+  d.className='sev'; d.textContent=n; d.dataset.value=n;
+  d.onclick=()=>{ document.querySelectorAll('.sev').forEach(s=>s.classList.remove('selected')); d.classList.add('selected'); };
+  sevRow.appendChild(d);
+});
+
+const today = new Date().toISOString().slice(0,10);
+document.getElementById('logDate').value = today;
+document.getElementById('periodStart').value = today;
+
+/* ---------- period logging ---------- */
+function logPeriodStart(){
+  const val = document.getElementById('periodStart').value;
+  if(!val) return;
+  cycles.push({startDate: val});
+  cycles.sort((a,b)=> new Date(a.startDate)-new Date(b.startDate));
+  store.set('thicket_cycles', cycles);
+  renderWheel();
+  renderCycleHistory();
+}
+
+function renderCycleHistory(){
+  const el = document.getElementById('cycleHistory');
+  if(cycles.length===0){ el.innerHTML='<div class="empty">No cycles logged yet</div>'; return; }
+  el.innerHTML = cycles.slice().reverse().map(c=>
+    `<div class="log-item"><span class="d">${c.startDate}</span> — period started</div>`
+  ).join('');
+}
+
+/* ---------- daily logging ---------- */
+function saveDailyLog(){
+  const date = document.getElementById('logDate').value;
+  if(!date) return;
+  const mood = [...document.querySelectorAll('#moodTags .tag.selected')].map(t=>t.dataset.value);
+  const symptoms = [...document.querySelectorAll('#symptomTags .tag.selected')].map(t=>t.dataset.value);
+  const sevEl = document.querySelector('.sev.selected');
+  const severity = sevEl ? Number(sevEl.dataset.value) : null;
+
+  dailyLogs = dailyLogs.filter(l=>l.date!==date);
+  dailyLogs.push({date, mood, symptoms, severity});
+  dailyLogs.sort((a,b)=> new Date(a.date)-new Date(b.date));
+  store.set('thicket_logs', dailyLogs);
+  renderRecentLogs();
+  updateCompanionLine(mood, severity);
+}
+
+function renderRecentLogs(){
+  const el = document.getElementById('recentLogs');
+  if(dailyLogs.length===0){ el.innerHTML='<div class="empty">Nothing logged yet</div>'; return; }
+  el.innerHTML = dailyLogs.slice().reverse().slice(0,14).map(l=>{
+    const parts = [];
+    if(l.mood.length) parts.push(l.mood.join(', '));
+    if(l.symptoms.length) parts.push(l.symptoms.join(', '));
+    if(l.severity) parts.push('severity ' + l.severity + '/5');
+    return `<div class="log-item"><span class="d">${l.date}</span> — ${parts.join(' · ') || 'logged'}</div>`;
+  }).join('');
+}
+
+/* ---------- cycle wheel + prediction ---------- */
+function avgCycleLength(){
+  if(cycles.length < 2) return null;
+  const lens = [];
+  for(let i=1;i<cycles.length;i++){
+    const d = (new Date(cycles[i].startDate) - new Date(cycles[i-1].startDate)) / 86400000;
+    if(d>0 && d<90) lens.push(d);
+  }
+  if(lens.length===0) return null;
+  const recent = lens.slice(-6);
+  return recent.reduce((a,b)=>a+b,0) / recent.length;
+}
+
+function renderWheel(){
+  const svg = document.getElementById('wheel');
+  const cx=110, cy=110, r=88;
+  svg.innerHTML = '';
+
+  const bg = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  bg.setAttribute('cx',cx); bg.setAttribute('cy',cy); bg.setAttribute('r',r);
+  bg.setAttribute('fill','none'); bg.setAttribute('stroke','rgba(243,233,220,0.12)'); bg.setAttribute('stroke-width','14');
+  svg.appendChild(bg);
+
+  const dayText = document.getElementById('wheelDayText');
+  const statusText = document.getElementById('wheelStatusText');
+
+  if(cycles.length===0){
+    dayText.textContent = 'Log your first period to begin';
+    statusText.textContent = '';
+    const moon = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    moon.setAttribute('cx',cx); moon.setAttribute('cy',cy); moon.setAttribute('r',30);
+    moon.setAttribute('fill','#D4A857'); moon.setAttribute('opacity','0.85');
+    svg.appendChild(moon);
+    return;
+  }
+
+  const lastStart = new Date(cycles[cycles.length-1].startDate);
+  const now = new Date();
+  const dayOfCycle = Math.floor((now - lastStart)/86400000) + 1;
+  const avgLen = avgCycleLength();
+  const cycleLen = avgLen || 28;
+
+  const progress = Math.max(0, Math.min(1, (dayOfCycle-1)/cycleLen));
+  const arc = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  arc.setAttribute('cx',cx); arc.setAttribute('cy',cy); arc.setAttribute('r',r);
+  arc.setAttribute('fill','none'); arc.setAttribute('stroke','#E8A0BF'); arc.setAttribute('stroke-width','14');
+  arc.setAttribute('stroke-linecap','round');
+  const circumference = 2*Math.PI*r;
+  arc.setAttribute('stroke-dasharray', `${circumference*progress} ${circumference}`);
+  arc.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+  svg.appendChild(arc);
+
+  const moon = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  moon.setAttribute('cx',cx); moon.setAttribute('cy',cy); moon.setAttribute('r',34);
+  moon.setAttribute('fill','#3D2E52'); moon.setAttribute('stroke','#D4A857'); moon.setAttribute('stroke-width','1.5');
+  svg.appendChild(moon);
+
+  dayText.textContent = `Day ${dayOfCycle} of cycle`;
+
+  if(avgLen){
+    const predicted = new Date(lastStart.getTime() + avgLen*86400000);
+    const opts = {month:'short', day:'numeric'};
+    const rangeStart = new Date(predicted.getTime() - 1.5*86400000);
+    const rangeEnd = new Date(predicted.getTime() + 1.5*86400000);
+    statusText.textContent = `predicted ${rangeStart.toLocaleDateString(undefined,opts)}–${rangeEnd.toLocaleDateString(undefined,opts)}`;
+  } else {
+    statusText.textContent = 'log one more period to unlock predictions';
+  }
+}
+
+/* ---------- companion (SVG deer + reactive line) ---------- */
+function drawDeer(){
+  const svg = document.getElementById('deer');
+  svg.innerHTML = `
+    <ellipse cx="75" cy="105" rx="34" ry="26" fill="#8FAE8B"/>
+    <circle cx="75" cy="55" r="26" fill="#8FAE8B"/>
+    <path d="M60 35 Q50 10 40 15 Q48 28 55 34 Z" fill="#D4A857"/>
+    <path d="M90 35 Q100 10 110 15 Q102 28 95 34 Z" fill="#D4A857"/>
+    <circle cx="66" cy="55" r="4" fill="#2B1F3D"/>
+    <circle cx="84" cy="55" r="4" fill="#2B1F3D"/>
+    <ellipse cx="75" cy="65" rx="6" ry="4" fill="#E8A0BF"/>
+    <circle cx="60" cy="100" r="5" fill="#F3E9DC" opacity="0.5"/>
+    <circle cx="90" cy="95" r="4" fill="#F3E9DC" opacity="0.5"/>
+    <circle cx="75" cy="112" r="5" fill="#F3E9DC" opacity="0.5"/>
+  `;
+}
+drawDeer();
+
+const LINES = {
+  irritable: "Rage is just energy with nowhere to go yet. Want to try the breathing space?",
+  angry: "That's a lot to carry today. I'm not going anywhere.",
+  sad: "It's okay to be soft today. No performance needed here.",
+  anxious: "One breath at a time — I'll wait with you.",
+  low_energy: "Resting counts as doing something.",
+  default: "Thanks for checking in with yourself today."
+};
+function updateCompanionLine(mood, severity){
+  const line = document.getElementById('companionLine');
+  let key = mood.find(m => LINES[m.replace(' ','_')]);
+  if(key) key = key.replace(' ','_');
+  if(key && LINES[key]) line.textContent = LINES[key];
+  else if(severity && severity>=4) line.textContent = "That sounds like a rough one. Be gentle with yourself tonight.";
+  else line.textContent = LINES.default;
+}
+
+/* ---------- breathing minigame ---------- */
+let breathing = false, breatheTimer = null;
+function toggleBreathing(){
+  breathing = !breathing;
+  const btn = document.getElementById('breatheBtn');
+  const orb = document.getElementById('orb');
+  const label = document.getElementById('breatheLabel');
+  if(breathing){
+    btn.textContent = 'Stop';
+    cycleBreath();
+  } else {
+    btn.textContent = 'Start';
+    clearTimeout(breatheTimer);
+    orb.className = 'breathe-orb';
+    label.textContent = "Press start when you're ready";
+  }
+}
+function cycleBreath(){
+  if(!breathing) return;
+  const orb = document.getElementById('orb');
+  const label = document.getElementById('breatheLabel');
+  orb.className = 'breathe-orb in';
+  label.textContent = 'Breathe in...';
+  breatheTimer = setTimeout(()=>{
+    if(!breathing) return;
+    orb.className = 'breathe-orb out';
+    label.textContent = 'Breathe out...';
+    breatheTimer = setTimeout(cycleBreath, 4000);
+  }, 4000);
+}
+
+/* ---------- init ---------- */
+renderWheel();
+renderCycleHistory();
+renderRecentLogs();
+</script>
+</body>
+</html>
