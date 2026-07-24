@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Thicket — Cycle Companion</title>
+<style>
+  :root{
+    --space-deep:#131029;
+    --space-mid:#1F1B3D;
+    --space-card:#241F49;
+    --moon-cream:#F3E9DC;
+    --rose:#E8A0BF;
+    --sage:#8FAE8B;
+    --gold:#D4A857;
+    --starwhite:#FFFdF2;
+    --line: rgba(243,233,220,0.14);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    position:relative;
+    background: radial-gradient(ellipse at 20% -10%, rgba(232,160,191,0.12), transparent 45%),
+                radial-gradient(ellipse at 90% 100%, rgba(143,174,139,0.10), transparent 45%),
+                var(--space-deep);
+    color:var(--moon-cream);
+    font-family:'Quicksand',-apple-system,sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:32px 16px 80px;
+    overflow-x:hidden;
+  }
+  /* starfield */
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .star{position:absolute;background:var(--starwhite);border-radius:50%;opacity:0.6;animation:twinkle 3.5s ease-in-out infinite;}
+  @keyframes twinkle{0%,100%{opacity:0.15;transform:scale(0.8);}50%{opacity:0.9;transform:scale(1.15);}}
+
+  .app{width:100%;max-width:480px;position:relative;z-index:1;}
+
+  header{text-align:center;margin-bottom:22px;}
+  .wordmark{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-size:34px;letter-spacing:0.04em;font-weight:600;color:var(--moon-cream);margin:0;
+  }
+  .wordmark em{color:var(--rose);font-style:normal;}
+  .tagline{font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:var(--sage);margin-top:4px;opacity:0.85;}
+
+  nav{display:flex;gap:6px;background:var(--space-mid);padding:5px;border-radius:14px;margin-bottom:20px;overflow-x:auto;}
+  nav button{
+    flex:1;padding:10px 4px;border:none;border-radius:10px;background:transparent;
+    color:var(--moon-cream);opacity:0.55;font-family:inherit;font-weight:600;font-size:12px;
+    cursor:pointer;transition:.2s;white-space:nowrap;
+  }
+  nav button.active{background:var(--space-deep);opacity:1;box-shadow:0 0 0 1px var(--line), 0 0 12px rgba(232,160,191,0.15);}
+
+  .panel{display:none;}
+  .panel.active{display:block;animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .card{
+    background:var(--space-card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:20px;
+    margin-bottom:16px;
+    box-shadow:0 0 24px rgba(0,0,0,0.15);
+  }
+  .card h2{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-size:20px;font-weight:600;margin:0 0 14px;color:var(--gold);
+  }
+  .card h3{font-size:13px;text-transform:uppercase;letter-spacing:0.08em;color:var(--rose);margin:0 0 10px;}
+
+  .wheel-wrap{display:flex;flex-direction:column;align-items:center;padding:6px 0 4px;}
+  #wheel{width:220px;height:220px;}
+  #wheel circle{transition:stroke-dasharray .6s ease;}
+  .wheel-center-label{text-align:center;margin-top:10px;}
+  .wheel-day{font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;color:var(--moon-cream);opacity:0.9;}
+  .wheel-status{font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--rose);margin-top:2px;}
+
+  .btn{display:inline-block;border:none;border-radius:12px;padding:11px 18px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;transition:.15s;}
+  .btn-primary{background:var(--rose);color:var(--space-deep);}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent;color:var(--moon-cream);border:1px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--sage);}
+  .btn-sm{padding:6px 12px;font-size:12px;border-radius:8px;}
+  .btn-row{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+
+  label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--sage);margin:14px 0 6px;}
+  label:first-child{margin-top:0;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  input[type=date],input[type=number],input[type=text]{
+    width:100%;background:var(--space-deep);border:1px solid var(--line);border-radius:10px;
+    color:var(--moon-cream);padding:10px 12px;font-family:inherit;font-size:14px;
+  }
+
+  .tags{display:flex;flex-wrap:wrap;gap:8px;}
+  .tag{padding:8px 14px;border-radius:20px;border:1px solid var(--line);background:var(--space-deep);color:var(--moon-cream);font-size:13px;cursor:pointer;opacity:0.75;transition:.15s;}
+  .tag.selected{opacity:1;border-color:var(--rose);background:rgba(232,160,191,0.18);}
+
+  .severity-row{display:flex;gap:8px;}
+  .sev{flex:1;padding:10px 0;text-align:center;border-radius:10px;border:1px solid var(--line);background:var(--space-deep);cursor:pointer;font-weight:700;opacity:0.6;}
+  .sev.selected{opacity:1;border-color:var(--gold);background:rgba(212,168,87,0.18);}
+
+  .strip-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .strip-month{font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;color:var(--gold);}
+  .day-strip{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
+  .day-strip::-webkit-scrollbar{height:4px;}
+  .day-strip::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+  .day-col{display:flex;flex-direction:column;align-items:center;gap:6px;flex:0 0 40px;scroll-snap-align:center;}
+  .day-letter{font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--sage);opacity:0.8;}
+  .day-bubble{width:36px;height:36px;border-radius:50%;background:var(--space-deep);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;transition:background .2s,border-color .2s,transform .15s;position:relative;}
+  .day-bubble.today{box-shadow:0 0 0 2px var(--gold);}
+  .day-bubble.marked{background:var(--rose);color:var(--space-deep);border-color:var(--rose);font-weight:700;}
+  .day-bubble.future{opacity:0.35;cursor:default;}
+  .day-bubble.pulse{animation:bubblePulse .3s ease;}
+  @keyframes bubblePulse{0%{transform:scale(1);}45%{transform:scale(1.28);}100%{transform:scale(1);}}
+  .day-bubble.predicted{background:transparent;border:2px dashed var(--rose);opacity:0.8;}
+
+  .month-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--sage);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;}
+  .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .month-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:12px;cursor:pointer;background:var(--space-deep);border:1px solid transparent;transition:background .2s,border-color .2s,transform .15s;}
+  .month-day.pad{visibility:hidden;cursor:default;}
+  .month-day.today{box-shadow:0 0 0 2px var(--gold);}
+  .month-day.marked{background:var(--rose);color:var(--space-deep);font-weight:700;}
+  .month-day.predicted{background:transparent;border:2px dashed var(--rose);opacity:0.8;}
+  .month-day.future-empty{opacity:0.4;}
+  .legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+  .log-list{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;}
+  .log-item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .log-item .d{color:var(--gold);font-weight:700;}
+  .log-item .rm{cursor:pointer;opacity:0.5;font-size:12px;flex-shrink:0;}
+  .log-item .rm:hover{opacity:1;color:var(--rose);}
+  .empty{opacity:0.55;font-size:13px;text-align:center;padding:12px 0;}
+
+  .companion-scene{display:flex;flex-direction:column;align-items:center;text-align:center;}
+  #deer{width:150px;height:150px;}
+  .companion-line{font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;margin:10px 0 4px;color:var(--moon-cream);min-height:24px;}
+
+  /* breathing */
+  .breathe-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0 4px;}
+  .breathe-orb{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%, rgba(232,160,191,0.9), rgba(143,174,139,0.55));transition:transform 4s ease-in-out;box-shadow:0 0 30px rgba(232,160,191,0.25);}
+  .breathe-orb.in{transform:scale(1.35);}
+  .breathe-orb.out{transform:scale(0.8);}
+  .breathe-label{margin-top:16px;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;color:var(--sage);}
+
+  /* star smash game */
+  .smash-field{position:relative;width:100%;height:260px;background:radial-gradient(circle at 50% 30%, rgba(232,160,191,0.05), transparent 60%);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .smash-star{position:absolute;font-size:26px;cursor:pointer;user-select:none;filter:drop-shadow(0 0 6px rgba(212,168,87,0.5));transition:transform .1s;}
+  .smash-star:active{transform:scale(1.4);}
+  .smash-score{text-align:center;font-size:13px;color:var(--gold);margin-top:10px;letter-spacing:0.06em;text-transform:uppercase;}
+  .particle{position:absolute;pointer-events:none;font-size:14px;animation:pop .5s ease forwards;}
+  @keyframes pop{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-30px) scale(0.4);}}
+
+  /* comfort match */
+  .match-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .match-card{aspect-ratio:1;border-radius:10px;background:var(--space-deep);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:.2s;}
+  .match-card.flipped{background:rgba(232,160,191,0.18);border-color:var(--rose);}
+  .match-card.matched{background:rgba(143,174,139,0.18);border-color:var(--sage);opacity:0.6;cursor:default;}
+  .match-status{text-align:center;font-size:13px;color:var(--sage);margin-top:10px;letter-spacing:0.06em;text-transform:uppercase;}
+
+  /* vent jar */
+  textarea#ventInput{width:100%;min-height:70px;background:var(--space-deep);border:1px solid var(--line);border-radius:10px;color:var(--moon-cream);padding:10px 12px;font-family:inherit;font-size:14px;resize:vertical;}
+  .vent-note{position:fixed;font-size:11px;color:var(--rose);opacity:0;pointer-events:none;z-index:5;}
+  @keyframes flyaway{0%{opacity:0.9;transform:translate(0,0) scale(1);}100%{opacity:0;transform:translate(60px,-260px) scale(0.4);}}
+
+  footer{text-align:center;font-size:11px;opacity:0.4;margin-top:20px;letter-spacing:0.05em;}
+
+  .app-toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--space-card);border:1px solid var(--rose);color:var(--moon-cream);
+    padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;
+    transition:opacity .25s, transform .25s;z-index:20;max-width:88%;text-align:center;
+    box-shadow:0 4px 20px rgba(0,0,0,0.35);
+  }
+  .app-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<div class="app">
+
+  <header>
+    <p class="wordmark">Thi<em>ck</em>et</p>
+    <p class="tagline">your cycle, gently kept</p>
+  </header>
+
+  <nav>
+    <button class="active" data-panel="cycle">Cycle</button>
+    <button data-panel="calendar">Calendar</button>
+    <button data-panel="log">Log</button>
+    <button data-panel="play">Play</button>
+    <button data-panel="companion">Fenn</button>
+  </nav>
+
+  <!-- CYCLE PANEL -->
+  <div class="panel active" id="panel-cycle">
+    <div class="card">
+      <h2>Where you are</h2>
+      <div class="wheel-wrap">
+        <svg id="wheel" viewBox="0 0 220 220"></svg>
+        <div class="wheel-center-label">
+          <div class="wheel-day" id="wheelDayText">Log your first period to begin</div>
+          <div class="wheel-status" id="wheelStatusText"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Mark period days</h2>
+      <p style="font-size:12px;opacity:0.7;margin:0 0 10px;">Tap a day to mark it as a period day. Tap again to unmark. Keep tapping day by day as your period goes on.</p>
+      <div class="strip-nav">
+        <button class="btn btn-ghost btn-sm" onclick="shiftWeek(-1)">‹</button>
+        <div class="strip-month" id="stripMonth"></div>
+        <button class="btn btn-ghost btn-sm" onclick="shiftWeek(1)">›</button>
+      </div>
+      <div class="day-strip" id="dayStrip"></div>
+      <div class="btn-row"><button class="btn btn-ghost btn-sm" onclick="shiftWeek(0,true)">Back to this week</button></div>
+    </div>
+
+    <div class="card">
+      <h2>History</h2>
+      <div class="log-list" id="cycleHistory"><div class="empty">No cycles logged yet</div></div>
+    </div>
+  </div>
+
+  <!-- CALENDAR PANEL -->
+  <div class="panel" id="panel-calendar">
+    <div class="card">
+      <h2>Months</h2>
+      <div class="strip-nav">
+        <button class="btn btn-ghost btn-sm" onclick="shiftMonth(-1)">‹</button>
+        <div class="strip-month" id="monthLabel"></div>
+        <button class="btn btn-ghost btn-sm" onclick="shiftMonth(1)">›</button>
+      </div>
+      <div class="month-weekdays">
+        <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+      </div>
+      <div class="month-grid" id="monthGrid"></div>
+      <div style="display:flex;gap:14px;justify-content:center;margin-top:14px;font-size:11px;opacity:0.75;">
+        <span><span class="legend-dot" style="background:var(--rose);"></span> logged</span>
+        <span><span class="legend-dot" style="border:2px dashed var(--rose);background:transparent;"></span> predicted</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG PANEL -->
+  <div class="panel" id="panel-log">
+    <div class="card">
+      <h2>Today</h2>
+      <label for="logDate">Date</label>
+      <input type="date" id="logDate">
+      <label>Mood</label>
+      <div class="tags" id="moodTags"></div>
+      <label>Symptoms</label>
+      <div class="tags" id="symptomTags"></div>
+      <label>Overall how rough was today?</label>
+      <div class="severity-row" id="sevRow"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveDailyLog()">Save today's log</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Recent entries</h2>
+      <div class="log-list" id="recentLogs"><div class="empty">Nothing logged yet</div></div>
+    </div>
+  </div>
+
+  <!-- PLAY PANEL -->
+  <div class="panel" id="panel-play">
+    <div class="card">
+      <h3>Star Smash</h3>
+      <p style="font-size:12px;opacity:0.7;margin:0 0 10px;">Tap the stars to shatter them. Good for when you need somewhere to put it.</p>
+      <div class="smash-field" id="smashField"></div>
+      <div class="smash-score" id="smashScore">Stars smashed: 0</div>
+    </div>
+
+    <div class="card">
+      <h3>Comfort Match</h3>
+      <p style="font-size:12px;opacity:0.7;margin:0 0 10px;">A slow little memory game. No timer, no pressure.</p>
+      <div class="match-grid" id="matchGrid"></div>
+      <div class="match-status" id="matchStatus">Find the pairs</div>
+      <div class="btn-row"><button class="btn btn-ghost btn-sm" onclick="setupMatch()">Reset board</button></div>
+    </div>
+
+    <div class="card">
+      <h3>Vent Jar</h3>
+      <p style="font-size:12px;opacity:0.7;margin:0 0 10px;">Write it down, then let it go. Nothing is saved.</p>
+      <textarea id="ventInput" placeholder="Say the thing..."></textarea>
+      <div class="btn-row"><button class="btn btn-primary" onclick="releaseVent()">Let it fly</button></div>
+    </div>
+
+    <div class="card">
+      <h3>Slow Breath</h3>
+      <div class="breathe-wrap">
+        <div class="breathe-orb" id="orb"></div>
+        <div class="breathe-label" id="breatheLabel">Press start when you're ready</div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" id="breatheBtn" onclick="toggleBreathing()">Start</button></div>
+    </div>
+  </div>
+
+  <!-- COMPANION PANEL -->
+  <div class="panel" id="panel-companion">
+    <div class="card companion-scene">
+      <h2 style="align-self:center;">Fenn</h2>
+      <svg id="deer" viewBox="0 0 150 150"></svg>
+      <div class="companion-line" id="companionLine">Hi. However today's going, I'm glad you stopped by.</div>
+    </div>
+  </div>
+
+  <footer>made for slow, imperfect, personal keeping</footer>
+</div>
+
+<script>
+/* ---------- starfield background ---------- */
+(function(){
+  const field = document.getElementById('stars');
+  const n = 60;
+  for(let i=0;i<n;i++){
+    const s = document.createElement('div');
+    s.className='star';
+    const size = Math.random()*2 + 1;
+    s.style.width = size+'px';
+    s.style.height = size+'px';
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*100+'%';
+    s.style.animationDelay = (Math.random()*3.5)+'s';
+    s.style.animationDuration = (2.5 + Math.random()*3)+'s';
+    field.appendChild(s);
+  }
+})();
+
+/* ---------- storage ---------- */
+let storageOK = true;
+try{
+  localStorage.setItem('__thicket_test','1');
+  localStorage.removeItem('__thicket_test');
+}catch(e){ storageOK = false; }
+
+const store = {
+  get(k, fallback){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+};
+
+function showToast(msg){
+  let t = document.getElementById('appToast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'appToast';
+    t.className = 'app-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.remove('show');
+  void t.offsetWidth; /* restart animation */
+  t.classList.add('show');
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(()=>t.classList.remove('show'), 1400);
+}
+
+if(!storageOK){
+  window.addEventListener('DOMContentLoaded', ()=>{
+    showToast('⚠️ This browser is blocking saved data — try opening in Safari/Chrome directly, not an in-app browser');
+  });
+}
+let dailyLogs = store.get('thicket_logs', []);       // [{date, mood[], symptoms[], severity}]
+let periodDays = store.get('thicket_period_days', null); // ["YYYY-MM-DD", ...]
+
+if(periodDays === null){
+  /* migrate from old cycles model (start/end pairs or plain start strings) */
+  const oldCycles = store.get('thicket_cycles', []);
+  const days = new Set();
+  oldCycles.forEach(c=>{
+    const c2 = typeof c === 'string' ? {startDate:c, endDate:null} : c;
+    const start = new Date(c2.startDate);
+    const end = c2.endDate ? new Date(c2.endDate) : new Date(c2.startDate);
+    for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+      days.add(d.toISOString().slice(0,10));
+    }
+  });
+  periodDays = [...days];
+  store.set('thicket_period_days', periodDays);
+}
+
+function toYMD(d){ return d.toISOString().slice(0,10); }
+
+function deriveCycles(){
+  const sorted = [...periodDays].sort();
+  const runs = [];
+  let run = null;
+  sorted.forEach(dateStr=>{
+    if(run && (new Date(dateStr) - new Date(run.endDate))/86400000 === 1){
+      run.endDate = dateStr;
+    } else {
+      if(run) runs.push(run);
+      run = {startDate: dateStr, endDate: dateStr};
+    }
+  });
+  if(run) runs.push(run);
+  return runs;
+}
+
+/* ---------- nav ---------- */
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.panel).classList.add('active');
+    if(btn.dataset.panel==='cycle'){ renderDayStrip(false); renderWheel(); }
+    if(btn.dataset.panel==='calendar') renderMonthView();
+    if(btn.dataset.panel==='play') startSmash();
+  });
+});
+
+/* ---------- tags setup ---------- */
+const MOODS = ['calm','irritable','sad','anxious','low energy','tender','angry','hopeful'];
+const SYMPTOMS = ['cramps','headache','bloating','fatigue','back pain','nausea','tender chest','acne'];
+
+function buildTags(containerId, list){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  list.forEach(item=>{
+    const t = document.createElement('div');
+    t.className='tag'; t.textContent=item; t.dataset.value=item;
+    t.onclick=()=>t.classList.toggle('selected');
+    el.appendChild(t);
+  });
+}
+buildTags('moodTags', MOODS);
+buildTags('symptomTags', SYMPTOMS);
+
+const sevRow = document.getElementById('sevRow');
+[1,2,3,4,5].forEach(n=>{
+  const d=document.createElement('div');
+  d.className='sev'; d.textContent=n; d.dataset.value=n;
+  d.onclick=()=>{ document.querySelectorAll('.sev').forEach(s=>s.classList.remove('selected')); d.classList.add('selected'); };
+  sevRow.appendChild(d);
+});
+
+const today = new Date().toISOString().slice(0,10);
+document.getElementById('logDate').value = today;
+
+/* ---------- day strip (tap to mark period days, scrollable) ---------- */
+let weekOffset = 0;
+function getWeekStart(offset){
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  const dow = now.getDay();
+  const start = new Date(now);
+  start.setDate(now.getDate() - dow + (offset*7));
+  return start;
+}
+function shiftWeek(delta, resetToNow){
+  weekOffset = resetToNow ? 0 : weekOffset + delta;
+  renderDayStrip(true);
+}
+function predictedRange(){
+  const cycles = deriveCycles();
+  if(cycles.length < 2) return null;
+  const avgLen = avgCycleLength();
+  if(!avgLen) return null;
+  const last = cycles[cycles.length-1];
+  const predictedStart = new Date(new Date(last.startDate).getTime() + avgLen*86400000);
+  const durations = cycles.map(c => (new Date(c.endDate)-new Date(c.startDate))/86400000 + 1);
+  const avgDuration = durations.reduce((a,b)=>a+b,0)/durations.length;
+  const predictedEnd = new Date(predictedStart.getTime() + (avgDuration-1)*86400000);
+  return {start: toYMD(predictedStart), end: toYMD(predictedEnd)};
+}
+function renderDayStrip(scrollToAnchor){
+  const strip = document.getElementById('dayStrip');
+  const monthLabel = document.getElementById('stripMonth');
+  const anchor = getWeekStart(weekOffset);
+  anchor.setDate(anchor.getDate() - 14); /* window starts 2 weeks before the target week */
+  const letters = ['S','M','T','W','T','F','S'];
+  const todayStr = toYMD(new Date());
+  const pred = predictedRange();
+  strip.innerHTML = '';
+  let labelSet = false;
+  let anchorEl = null;
+  for(let i=0;i<42;i++){
+    const d = new Date(anchor);
+    d.setDate(anchor.getDate()+i);
+    const dateStr = toYMD(d);
+    const isFuture = dateStr > todayStr;
+    const isMarked = periodDays.includes(dateStr);
+    const isPredicted = !isMarked && pred && dateStr >= pred.start && dateStr <= pred.end;
+    const col = document.createElement('div');
+    col.className = 'day-col';
+    const bubble = document.createElement('div');
+    bubble.className = 'day-bubble'
+      + (dateStr===todayStr ? ' today':'')
+      + (isMarked ? ' marked':'')
+      + (isPredicted ? ' predicted':'')
+      + (isFuture && !isPredicted ? ' future':'');
+    bubble.textContent = d.getDate();
+    bubble.onclick = ()=>toggleDay(dateStr, isFuture, bubble);
+    col.innerHTML = `<div class="day-letter">${letters[d.getDay()]}</div>`;
+    col.appendChild(bubble);
+    strip.appendChild(col);
+    if(dateStr===todayStr) anchorEl = col;
+    if(!labelSet && i===14){ monthLabel.textContent = d.toLocaleDateString(undefined,{month:'long', year:'numeric'}); labelSet=true; }
+  }
+  if(scrollToAnchor !== false){
+    requestAnimationFrame(()=>{
+      const target = anchorEl || strip.children[14];
+      if(target) strip.scrollLeft = target.offsetLeft - strip.clientWidth/2 + target.clientWidth/2;
+    });
+  }
+}
+renderDayStrip();
+
+function toggleDay(dateStr, isFuture, bubbleEl){
+  if(isFuture) return;
+  const i = periodDays.indexOf(dateStr);
+  let nowMarked;
+  if(i>=0){ periodDays.splice(i,1); nowMarked = false; } else { periodDays.push(dateStr); nowMarked = true; }
+  const ok = store.set('thicket_period_days', periodDays);
+  if(bubbleEl){
+    bubbleEl.classList.add('pulse');
+    setTimeout(()=>bubbleEl.classList.remove('pulse'), 300);
+  }
+  showToast(ok ? (nowMarked ? 'Marked' : 'Unmarked') : '⚠️ Could not save — storage blocked');
+  renderDayStrip(false);
+  renderWheel();
+  renderCycleHistory();
+  renderMonthView();
+}
+
+function removePeriod(startDate, endDate){
+  const s = new Date(startDate), e = new Date(endDate);
+  periodDays = periodDays.filter(ds => new Date(ds) < s || new Date(ds) > e);
+  store.set('thicket_period_days', periodDays);
+  showToast('Removed');
+  renderDayStrip(false);
+  renderWheel();
+  renderCycleHistory();
+  renderMonthView();
+}
+
+function renderCycleHistory(){
+  const el = document.getElementById('cycleHistory');
+  const runs = deriveCycles();
+  if(runs.length===0){ el.innerHTML='<div class="empty">No period days marked yet</div>'; return; }
+  const sorted = runs.slice().sort((a,b)=> new Date(b.startDate)-new Date(a.startDate));
+  el.innerHTML = sorted.map(c=>{
+    const range = c.startDate===c.endDate ? c.startDate : `${c.startDate} → ${c.endDate}`;
+    return `<div class="log-item"><span><span class="d">${range}</span></span><span class="rm" onclick="removePeriod('${c.startDate}','${c.endDate}')">remove</span></div>`;
+  }).join('');
+}
+
+/* ---------- daily logging ---------- */
+function saveDailyLog(){
+  const date = document.getElementById('logDate').value;
+  if(!date) return;
+  const mood = [...document.querySelectorAll('#moodTags .tag.selected')].map(t=>t.dataset.value);
+  const symptoms = [...document.querySelectorAll('#symptomTags .tag.selected')].map(t=>t.dataset.value);
+  const sevEl = document.querySelector('.sev.selected');
+  const severity = sevEl ? Number(sevEl.dataset.value) : null;
+
+  dailyLogs = dailyLogs.filter(l=>l.date!==date);
+  dailyLogs.push({date, mood, symptoms, severity});
+  dailyLogs.sort((a,b)=> new Date(a.date)-new Date(b.date));
+  store.set('thicket_logs', dailyLogs);
+  renderRecentLogs();
+  updateCompanionLine(mood, severity);
+}
+
+function renderRecentLogs(){
+  const el = document.getElementById('recentLogs');
+  if(dailyLogs.length===0){ el.innerHTML='<div class="empty">Nothing logged yet</div>'; return; }
+  el.innerHTML = dailyLogs.slice().reverse().slice(0,14).map(l=>{
+    const parts = [];
+    if(l.mood.length) parts.push(l.mood.join(', '));
+    if(l.symptoms.length) parts.push(l.symptoms.join(', '));
+    if(l.severity) parts.push('severity ' + l.severity + '/5');
+    return `<div class="log-item"><span class="d">${l.date}</span> — ${parts.join(' · ') || 'logged'}</div>`;
+  }).join('');
+}
+
+/* ---------- month calendar view ---------- */
+let monthAnchor = new Date();
+monthAnchor.setDate(1);
+function shiftMonth(delta){
+  monthAnchor.setMonth(monthAnchor.getMonth()+delta);
+  renderMonthView();
+}
+function renderMonthView(){
+  const grid = document.getElementById('monthGrid');
+  const label = document.getElementById('monthLabel');
+  if(!grid) return;
+  label.textContent = monthAnchor.toLocaleDateString(undefined,{month:'long', year:'numeric'});
+  const year = monthAnchor.getFullYear(), month = monthAnchor.getMonth();
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStr = toYMD(new Date());
+  const pred = predictedRange();
+  grid.innerHTML = '';
+  for(let i=0;i<firstDow;i++){
+    const pad = document.createElement('div');
+    pad.className = 'month-day pad';
+    grid.appendChild(pad);
+  }
+  for(let day=1; day<=daysInMonth; day++){
+    const d = new Date(year, month, day);
+    const dateStr = toYMD(d);
+    const isMarked = periodDays.includes(dateStr);
+    const isPredicted = !isMarked && pred && dateStr >= pred.start && dateStr <= pred.end;
+    const isFuture = dateStr > todayStr;
+    const cell = document.createElement('div');
+    cell.className = 'month-day'
+      + (dateStr===todayStr ? ' today':'')
+      + (isMarked ? ' marked':'')
+      + (isPredicted ? ' predicted':'');
+    cell.textContent = day;
+    cell.onclick = ()=>toggleDay(dateStr, isFuture && !isPredicted, cell);
+    grid.appendChild(cell);
+  }
+}
+
+/* ---------- cycle wheel + prediction ---------- */
+function avgCycleLength(){
+  const cycles = deriveCycles();
+  if(cycles.length < 2) return null;
+  const lens = [];
+  for(let i=1;i<cycles.length;i++){
+    const d = (new Date(cycles[i].startDate) - new Date(cycles[i-1].startDate)) / 86400000;
+    if(d>0 && d<90) lens.push(d);
+  }
+  if(lens.length===0) return null;
+  const recent = lens.slice(-6);
+  return recent.reduce((a,b)=>a+b,0) / recent.length;
+}
+
+function renderWheel(){
+  const svg = document.getElementById('wheel');
+  const cx=110, cy=110, r=88;
+  svg.innerHTML = '';
+
+  const bg = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  bg.setAttribute('cx',cx); bg.setAttribute('cy',cy); bg.setAttribute('r',r);
+  bg.setAttribute('fill','none'); bg.setAttribute('stroke','rgba(243,233,220,0.12)'); bg.setAttribute('stroke-width','14');
+  svg.appendChild(bg);
+
+  /* small stars ringing the wheel */
+  for(let i=0;i<10;i++){
+    const ang = (i/10)*2*Math.PI;
+    const sx = cx + (r+18)*Math.cos(ang);
+    const sy = cy + (r+18)*Math.sin(ang);
+    const st = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    st.setAttribute('cx',sx); st.setAttribute('cy',sy); st.setAttribute('r', 1.2 + (i%3));
+    st.setAttribute('fill', i%2===0 ? '#D4A857' : '#F3E9DC'); st.setAttribute('opacity','0.5');
+    svg.appendChild(st);
+  }
+
+  const dayText = document.getElementById('wheelDayText');
+  const statusText = document.getElementById('wheelStatusText');
+  const cycles = deriveCycles();
+
+  if(cycles.length===0){
+    dayText.textContent = 'Log your first period to begin';
+    statusText.textContent = '';
+    const moon = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    moon.setAttribute('cx',cx); moon.setAttribute('cy',cy); moon.setAttribute('r',30);
+    moon.setAttribute('fill','#D4A857'); moon.setAttribute('opacity','0.85');
+    svg.appendChild(moon);
+    return;
+  }
+
+  const lastStart = new Date(cycles[cycles.length-1].startDate);
+  const now = new Date();
+  const dayOfCycle = Math.floor((now - lastStart)/86400000) + 1;
+  const avgLen = avgCycleLength();
+  const cycleLen = avgLen || 28;
+
+  const progress = Math.max(0, Math.min(1, (dayOfCycle-1)/cycleLen));
+  const arc = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  arc.setAttribute('cx',cx); arc.setAttribute('cy',cy); arc.setAttribute('r',r);
+  arc.setAttribute('fill','none'); arc.setAttribute('stroke','#E8A0BF'); arc.setAttribute('stroke-width','14');
+  arc.setAttribute('stroke-linecap','round');
+  const circumference = 2*Math.PI*r;
+  arc.setAttribute('stroke-dasharray', `${circumference*progress} ${circumference}`);
+  arc.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+  svg.appendChild(arc);
+
+  const moon = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  moon.setAttribute('cx',cx); moon.setAttribute('cy',cy); moon.setAttribute('r',34);
+  moon.setAttribute('fill','#241F49'); moon.setAttribute('stroke','#D4A857'); moon.setAttribute('stroke-width','1.5');
+  svg.appendChild(moon);
+
+  dayText.textContent = `Day ${dayOfCycle} of cycle`;
+
+  if(avgLen){
+    const predicted = new Date(lastStart.getTime() + avgLen*86400000);
+    const opts = {month:'short', day:'numeric'};
+    const rangeStart = new Date(predicted.getTime() - 1.5*86400000);
+    const rangeEnd = new Date(predicted.getTime() + 1.5*86400000);
+    statusText.textContent = `predicted ${rangeStart.toLocaleDateString(undefined,opts)}–${rangeEnd.toLocaleDateString(undefined,opts)}`;
+  } else {
+    statusText.textContent = 'log one more period to unlock predictions';
+  }
+}
+
+/* ---------- companion ---------- */
+function drawDeer(){
+  const svg = document.getElementById('deer');
+  svg.innerHTML = `
+    <ellipse cx="75" cy="105" rx="34" ry="26" fill="#8FAE8B"/>
+    <circle cx="75" cy="55" r="26" fill="#8FAE8B"/>
+    <path d="M60 35 Q50 10 40 15 Q48 28 55 34 Z" fill="#D4A857"/>
+    <path d="M90 35 Q100 10 110 15 Q102 28 95 34 Z" fill="#D4A857"/>
+    <circle cx="66" cy="55" r="4" fill="#131029"/>
+    <circle cx="84" cy="55" r="4" fill="#131029"/>
+    <ellipse cx="75" cy="65" rx="6" ry="4" fill="#E8A0BF"/>
+    <circle cx="60" cy="100" r="5" fill="#F3E9DC" opacity="0.5"/>
+    <circle cx="90" cy="95" r="4" fill="#F3E9DC" opacity="0.5"/>
+    <circle cx="75" cy="112" r="5" fill="#F3E9DC" opacity="0.5"/>
+  `;
+}
+drawDeer();
+
+const LINES = {
+  irritable: "Rage is just energy with nowhere to go yet. The Play tab has somewhere to put it.",
+  angry: "That's a lot to carry today. I'm not going anywhere.",
+  sad: "It's okay to be soft today. No performance needed here.",
+  anxious: "One breath at a time — I'll wait with you.",
+  low_energy: "Resting counts as doing something.",
+  default: "Thanks for checking in with yourself today."
+};
+function updateCompanionLine(mood, severity){
+  const line = document.getElementById('companionLine');
+  let key = mood.find(m => LINES[m.replace(' ','_')]);
+  if(key) key = key.replace(' ','_');
+  if(key && LINES[key]) line.textContent = LINES[key];
+  else if(severity && severity>=4) line.textContent = "That sounds like a rough one. Be gentle with yourself tonight.";
+  else line.textContent = LINES.default;
+}
+
+/* ---------- breathing minigame ---------- */
+let breathing = false, breatheTimer = null;
+function toggleBreathing(){
+  breathing = !breathing;
+  const btn = document.getElementById('breatheBtn');
+  const orb = document.getElementById('orb');
+  const label = document.getElementById('breatheLabel');
+  if(breathing){ btn.textContent = 'Stop'; cycleBreath(); }
+  else { btn.textContent = 'Start'; clearTimeout(breatheTimer); orb.className = 'breathe-orb'; label.textContent = "Press start when you're ready"; }
+}
+function cycleBreath(){
+  if(!breathing) return;
+  const orb = document.getElementById('orb');
+  const label = document.getElementById('breatheLabel');
+  orb.className = 'breathe-orb in';
+  label.textContent = 'Breathe in...';
+  breatheTimer = setTimeout(()=>{
+    if(!breathing) return;
+    orb.className = 'breathe-orb out';
+    label.textContent = 'Breathe out...';
+    breatheTimer = setTimeout(cycleBreath, 4000);
+  }, 4000);
+}
+
+/* ---------- star smash minigame ---------- */
+let smashCount = 0, smashInterval = null;
+function startSmash(){
+  const field = document.getElementById('smashField');
+  if(field.dataset.started) return;
+  field.dataset.started = '1';
+  smashInterval = setInterval(spawnStar, 900);
+  spawnStar();
+}
+function spawnStar(){
+  const field = document.getElementById('smashField');
+  if(field.children.length > 8) return;
+  const star = document.createElement('div');
+  star.className = 'smash-star';
+  star.textContent = '✦';
+  star.style.left = (Math.random()*85)+'%';
+  star.style.top = (Math.random()*80)+'%';
+  star.style.color = ['#D4A857','#E8A0BF','#8FAE8B','#F3E9DC'][Math.floor(Math.random()*4)];
+  star.onclick = (e)=>{
+    smashCount++;
+    document.getElementById('smashScore').textContent = 'Stars smashed: '+smashCount;
+    const p = document.createElement('div');
+    p.className='particle'; p.textContent='✨';
+    p.style.left = star.style.left; p.style.top = star.style.top;
+    field.appendChild(p);
+    setTimeout(()=>p.remove(), 500);
+    star.remove();
+  };
+  field.appendChild(star);
+  setTimeout(()=>{ if(star.parentNode) star.remove(); }, 3500);
+}
+
+/* ---------- comfort match minigame ---------- */
+const MATCH_ICONS = ['🌙','🕯️','🌷','☕','🧸','🦋','⭐','🌿'];
+let matchState = { flipped: [], matched: [], cards: [], busy:false };
+function setupMatch(){
+  const icons = MATCH_ICONS.slice(0,6);
+  const deck = [...icons, ...icons].sort(()=>Math.random()-0.5);
+  matchState = { flipped: [], matched: [], cards: deck, busy:false };
+  const grid = document.getElementById('matchGrid');
+  grid.innerHTML = '';
+  deck.forEach((icon, i)=>{
+    const c = document.createElement('div');
+    c.className = 'match-card';
+    c.dataset.i = i;
+    c.onclick = ()=>flipCard(i);
+    grid.appendChild(c);
+  });
+  document.getElementById('matchStatus').textContent = 'Find the pairs';
+}
+function flipCard(i){
+  if(matchState.busy) return;
+  const cards = document.querySelectorAll('.match-card');
+  const el = cards[i];
+  if(el.classList.contains('flipped') || el.classList.contains('matched')) return;
+  el.textContent = matchState.cards[i];
+  el.classList.add('flipped');
+  matchState.flipped.push(i);
+  if(matchState.flipped.length===2){
+    matchState.busy = true;
+    const [a,b] = matchState.flipped;
+    if(matchState.cards[a]===matchState.cards[b]){
+      cards[a].classList.add('matched'); cards[b].classList.add('matched');
+      matchState.matched.push(a,b);
+      matchState.flipped = []; matchState.busy = false;
+      if(matchState.matched.length === matchState.cards.length){
+        document.getElementById('matchStatus').textContent = 'All paired. Nicely done.';
+      }
+    } else {
+      setTimeout(()=>{
+        cards[a].textContent=''; cards[a].classList.remove('flipped');
+        cards[b].textContent=''; cards[b].classList.remove('flipped');
+        matchState.flipped = []; matchState.busy = false;
+      }, 700);
+    }
+  }
+}
+setupMatch();
+
+/* ---------- vent jar ---------- */
+function releaseVent(){
+  const input = document.getElementById('ventInput');
+  const text = input.value.trim();
+  if(!text) return;
+  const rect = input.getBoundingClientRect();
+  const note = document.createElement('div');
+  note.className = 'vent-note';
+  note.textContent = '✧';
+  note.style.left = (rect.left + rect.width/2) + 'px';
+  note.style.top = rect.top + 'px';
+  note.style.animation = 'flyaway 1.4s ease forwards';
+  document.body.appendChild(note);
+  setTimeout(()=>note.remove(), 1400);
+  input.value = '';
+}
+
+/* ---------- init ---------- */
+renderWheel();
+renderCycleHistory();
+renderRecentLogs();
+renderMonthView();
+</script>
+</body>
+</html>
